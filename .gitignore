@@ -39,3 +39,7 @@ npm-debug.log
 *.db
 *.db-*
 
+# Local LLM files
+.claude/settings.local.json
+.claude/launch.json
+.superpowers/

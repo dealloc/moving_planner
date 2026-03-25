@@ -34,6 +34,7 @@ defmodule MovingPlannerWeb.Endpoint do
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :moving_planner
+    plug Tidewave
   end
 
   plug Phoenix.LiveDashboard.RequestLogger,
