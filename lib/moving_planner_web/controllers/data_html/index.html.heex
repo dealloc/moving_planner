@@ -1,0 +1,49 @@
+<Layouts.app flash={@flash} current_page={:data}>
+  <div class="space-y-6 max-w-lg">
+    <h1 class="text-2xl font-bold">Import / Export</h1>
+
+    <%!-- Export --%>
+    <div class="card bg-base-200 shadow">
+      <div class="card-body">
+        <h2 class="card-title text-base">Export</h2>
+        <p class="text-sm text-base-content/60">
+          Download all rooms, boxes, items, tags and todos as a JSON file.
+        </p>
+        <div class="card-actions">
+          <a href={~p"/export"} class="btn btn-primary btn-sm">
+            <span class="hero-arrow-down-tray size-4"></span> Download backup
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <%!-- Import --%>
+    <div class="card bg-base-200 shadow">
+      <div class="card-body">
+        <h2 class="card-title text-base">Import</h2>
+        <p class="text-sm text-base-content/60">
+          Restore from a previously exported JSON file.
+          <strong class="text-warning">This replaces all current data.</strong>
+        </p>
+        <form
+          action={~p"/import"}
+          method="post"
+          enctype="multipart/form-data"
+          class="flex gap-2 items-center flex-wrap mt-2"
+        >
+          <input type="hidden" name="_csrf_token" value={get_csrf_token()} />
+          <input
+            type="file"
+            name="file"
+            accept=".json"
+            class="file-input file-input-bordered file-input-sm flex-1"
+            required
+          />
+          <button type="submit" class="btn btn-warning btn-sm">
+            <span class="hero-arrow-up-tray size-4"></span> Import
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</Layouts.app>

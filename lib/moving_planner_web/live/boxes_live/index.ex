@@ -2,7 +2,6 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
   use MovingPlannerWeb, :live_view
 
   alias MovingPlanner.Inventory
-  alias MovingPlanner.Inventory.Box
   alias MovingPlanner.Rooms
 
   def mount(_params, _session, socket) do
@@ -53,23 +52,6 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
        filter_status: status,
        filter_fragile: fragile
      )}
-  end
-
-  def handle_event("detect_room", %{"code" => code}, socket) do
-    case Box.parse_code(code) do
-      {:ok, letter, _serial} ->
-        case Rooms.get_room_by_letter(letter) do
-          nil ->
-            {:noreply, socket}
-
-          room ->
-            cs = Inventory.change_box(%Box{}, %{room_id: room.id})
-            {:noreply, assign(socket, form: to_form(cs))}
-        end
-
-      :error ->
-        {:noreply, socket}
-    end
   end
 
   def handle_event("save_box", %{"box" => params}, socket) do
@@ -214,26 +196,11 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
             <h3 class="font-bold text-lg mb-4">New Box</h3>
             <.form for={@form} phx-submit="save_box" class="space-y-4">
               <div class="form-control">
-                <label class="label label-text">
-                  Box Code (optional — auto-detects room)
-                </label>
-                <input
-                  type="text"
-                  class="input input-bordered input-sm font-mono uppercase"
-                  placeholder="e.g. B-LIV-001"
-                  phx-change="detect_room"
-                  name="code"
-                  value=""
-                />
-                <p class="text-xs text-base-content/50 mt-1">
-                  Serial is assigned automatically. Code is for auto-detecting the room.
-                </p>
-              </div>
-              <div class="form-control">
                 <label class="label label-text">Destination Room</label>
                 <select
                   name={@form[:room_id].name}
                   class="select select-bordered select-sm"
+                  autofocus
                 >
                   <option
                     :for={{name, id} <- Rooms.list_rooms_for_select()}

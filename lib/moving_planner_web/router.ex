@@ -20,6 +20,10 @@ defmodule MovingPlannerWeb.Router do
     get "/login", SessionController, :new
     post "/login", SessionController, :create
     delete "/login", SessionController, :delete
+
+    get "/data", DataController, :index
+    get "/export", DataController, :export
+    post "/import", DataController, :import
   end
 
   scope "/", MovingPlannerWeb do

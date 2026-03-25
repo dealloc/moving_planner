@@ -73,7 +73,7 @@ defmodule MovingPlanner.Inventory do
 
       changeset =
         %Box{serial: serial}
-        |> Box.changeset(Map.put(attrs, :room_id, room_id))
+        |> Box.changeset(Map.put(attrs, "room_id", room_id))
 
       case Repo.insert(changeset) do
         {:ok, box} ->

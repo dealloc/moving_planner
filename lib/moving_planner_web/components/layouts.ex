@@ -113,6 +113,14 @@ defmodule MovingPlannerWeb.Layouts do
                   <.icon name="hero-check-circle" class="size-4" /> Todos
                 </.link>
               </li>
+              <li>
+                <.link
+                  navigate={~p"/data"}
+                  class={if @current_page == :data, do: "active", else: ""}
+                >
+                  <.icon name="hero-circle-stack" class="size-4" /> Import / Export
+                </.link>
+              </li>
             </ul>
           </nav>
 
