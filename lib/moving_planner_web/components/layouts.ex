@@ -62,7 +62,12 @@ defmodule MovingPlannerWeb.Layouts do
               <.icon name="hero-archive-box" class="size-6 text-primary" />
               <span class="font-bold text-lg">Moving Planner</span>
             </a>
-            <p class="text-xs text-base-content/50 mt-1">Wezemaal → Hoeleden</p>
+            <p class="text-xs text-base-content/50 mt-1">
+              {Application.get_env(:moving_planner, :location_from)} → {Application.get_env(
+                :moving_planner,
+                :location_to
+              )}
+            </p>
           </div>
 
           <%!-- Navigation links --%>
@@ -111,9 +116,17 @@ defmodule MovingPlannerWeb.Layouts do
             </ul>
           </nav>
 
-          <%!-- Theme toggle --%>
-          <div class="p-4 border-t border-base-300">
+          <%!-- Theme toggle + sign out --%>
+          <div class="p-4 border-t border-base-300 flex items-center justify-between">
             <.theme_toggle />
+            <.link
+              href={~p"/login"}
+              method="delete"
+              class="btn btn-ghost btn-xs text-base-content/50"
+              title="Sign out"
+            >
+              <.icon name="hero-arrow-right-on-rectangle" class="size-4" />
+            </.link>
           </div>
         </aside>
       </div>

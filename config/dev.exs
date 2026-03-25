@@ -1,5 +1,10 @@
 import Config
 
+config :moving_planner,
+  auth_password: "dev",
+  location_from: "Wezemaal",
+  location_to: "Hoeleden"
+
 # Configure your database
 config :moving_planner, MovingPlanner.Repo,
   database: Path.expand("../moving_planner_dev.db", __DIR__),

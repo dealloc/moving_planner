@@ -24,6 +24,15 @@ config :moving_planner, MovingPlannerWeb.Endpoint,
   http: [port: String.to_integer(System.get_env("PORT", "4000"))]
 
 if config_env() == :prod do
+  auth_password =
+    System.get_env("AUTH_PASSWORD") ||
+      raise "environment variable AUTH_PASSWORD is missing."
+
+  config :moving_planner,
+    auth_password: auth_password,
+    location_from: System.get_env("LOCATION_FROM", "Origin"),
+    location_to: System.get_env("LOCATION_TO", "Destination")
+
   database_path =
     System.get_env("DATABASE_PATH") ||
       raise """
