@@ -27,6 +27,10 @@ defmodule MovingPlannerWeb.Endpoint do
     only: MovingPlannerWeb.static_paths(),
     raise_on_missing_only: code_reloading?
 
+  if Mix.env() == :dev do
+    plug Tidewave
+  end
+
   # Code reloading can be explicitly enabled under the
   # :code_reloader configuration of your endpoint.
   if code_reloading? do
@@ -34,7 +38,6 @@ defmodule MovingPlannerWeb.Endpoint do
     plug Phoenix.LiveReloader
     plug Phoenix.CodeReloader
     plug Phoenix.Ecto.CheckRepoStatus, otp_app: :moving_planner
-    plug Tidewave
   end
 
   plug Phoenix.LiveDashboard.RequestLogger,
