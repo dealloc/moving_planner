@@ -12,20 +12,17 @@ defmodule MovingPlannerWeb.Layouts do
   embed_templates "layouts/*"
 
   @doc """
-  Renders your app layout.
-
-  This function is typically invoked from every template,
-  and it often contains your application menu, sidebar,
-  or similar.
+  Renders the app layout with a sidebar navigation.
 
   ## Examples
 
-      <Layouts.app flash={@flash}>
+      <Layouts.app flash={@flash} current_page={:boxes}>
         <h1>Content</h1>
       </Layouts.app>
 
   """
   attr :flash, :map, required: true, doc: "the map of flash messages"
+  attr :current_page, :atom, default: nil, doc: "the current page atom for active nav highlight"
 
   attr :current_scope, :map,
     default: nil,
@@ -35,38 +32,92 @@ defmodule MovingPlannerWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <a href="/" class="flex-1 flex w-fit items-center gap-2">
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="text-sm font-semibold">v{Application.spec(:phoenix, :vsn)}</span>
-        </a>
-      </div>
-      <div class="flex-none">
-        <ul class="flex flex-column px-1 space-x-4 items-center">
-          <li>
-            <a href="https://phoenixframework.org/" class="btn btn-ghost">Website</a>
-          </li>
-          <li>
-            <a href="https://github.com/phoenixframework/phoenix" class="btn btn-ghost">GitHub</a>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-          <li>
-            <a href="https://hexdocs.pm/phoenix/overview.html" class="btn btn-primary">
-              Get Started <span aria-hidden="true">&rarr;</span>
-            </a>
-          </li>
-        </ul>
-      </div>
-    </header>
+    <div class="drawer lg:drawer-open">
+      <input id="nav-drawer" type="checkbox" class="drawer-toggle" />
 
-    <main class="px-4 py-20 sm:px-6 lg:px-8">
-      <div class="mx-auto max-w-2xl space-y-4">
-        {render_slot(@inner_block)}
+      <div class="drawer-content flex flex-col min-h-screen">
+        <%!-- Mobile top bar --%>
+        <div class="navbar bg-base-200 lg:hidden border-b border-base-300">
+          <label for="nav-drawer" class="btn btn-ghost btn-sm">
+            <.icon name="hero-bars-3" class="size-5" />
+          </label>
+          <span class="font-bold ml-2">Moving Planner</span>
+          <div class="ml-auto mr-2">
+            <.theme_toggle />
+          </div>
+        </div>
+
+        <%!-- Page content --%>
+        <main class="flex-1 p-4 lg:p-8">
+          {render_slot(@inner_block)}
+        </main>
       </div>
-    </main>
+
+      <div class="drawer-side z-40">
+        <label for="nav-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+        <aside class="w-64 min-h-full bg-base-200 border-r border-base-300 flex flex-col">
+          <%!-- Logo --%>
+          <div class="p-4 border-b border-base-300">
+            <a href={~p"/"} class="flex items-center gap-2">
+              <.icon name="hero-archive-box" class="size-6 text-primary" />
+              <span class="font-bold text-lg">Moving Planner</span>
+            </a>
+            <p class="text-xs text-base-content/50 mt-1">Wezemaal → Hoeleden</p>
+          </div>
+
+          <%!-- Navigation links --%>
+          <nav class="flex-1 p-3">
+            <ul class="menu menu-sm gap-1 w-full">
+              <li>
+                <.link
+                  navigate={~p"/"}
+                  class={if @current_page == :dashboard, do: "active", else: ""}
+                >
+                  <.icon name="hero-squares-2x2" class="size-4" /> Dashboard
+                </.link>
+              </li>
+              <li>
+                <.link
+                  navigate={~p"/boxes"}
+                  class={if @current_page == :boxes, do: "active", else: ""}
+                >
+                  <.icon name="hero-archive-box" class="size-4" /> Boxes
+                </.link>
+              </li>
+              <li>
+                <.link
+                  navigate={~p"/items"}
+                  class={if @current_page == :items, do: "active", else: ""}
+                >
+                  <.icon name="hero-cube" class="size-4" /> Items
+                </.link>
+              </li>
+              <li>
+                <.link
+                  navigate={~p"/rooms"}
+                  class={if @current_page == :rooms, do: "active", else: ""}
+                >
+                  <.icon name="hero-home" class="size-4" /> Rooms
+                </.link>
+              </li>
+              <li>
+                <.link
+                  navigate={~p"/todos"}
+                  class={if @current_page == :todos, do: "active", else: ""}
+                >
+                  <.icon name="hero-check-circle" class="size-4" /> Todos
+                </.link>
+              </li>
+            </ul>
+          </nav>
+
+          <%!-- Theme toggle --%>
+          <div class="p-4 border-t border-base-300">
+            <.theme_toggle />
+          </div>
+        </aside>
+      </div>
+    </div>
 
     <.flash_group flash={@flash} />
     """
@@ -126,7 +177,7 @@ defmodule MovingPlannerWeb.Layouts do
       <div class="absolute w-1/3 h-full rounded-full border-1 border-base-200 bg-base-100 brightness-200 left-0 [[data-theme=light]_&]:left-1/3 [[data-theme=dark]_&]:left-2/3 transition-[left]" />
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex p-2 cursor-pointer w-1/3 justify-center"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="system"
       >
@@ -134,7 +185,7 @@ defmodule MovingPlannerWeb.Layouts do
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex p-2 cursor-pointer w-1/3 justify-center"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="light"
       >
@@ -142,7 +193,7 @@ defmodule MovingPlannerWeb.Layouts do
       </button>
 
       <button
-        class="flex p-2 cursor-pointer w-1/3"
+        class="flex p-2 cursor-pointer w-1/3 justify-center"
         phx-click={JS.dispatch("phx:set-theme")}
         data-phx-theme="dark"
       >

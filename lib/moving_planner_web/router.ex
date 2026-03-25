@@ -17,7 +17,14 @@ defmodule MovingPlannerWeb.Router do
   scope "/", MovingPlannerWeb do
     pipe_through :browser
 
-    get "/", PageController, :home
+    live "/", DashboardLive, :index
+    live "/boxes", BoxesLive.Index, :index
+    live "/boxes/new", BoxesLive.Index, :new
+    live "/boxes/:id", BoxesLive.Show, :show
+    live "/boxes/:id/edit", BoxesLive.Show, :edit
+    live "/items", ItemsLive.Index, :index
+    live "/rooms", RoomsLive.Index, :index
+    live "/todos", TodosLive.Index, :index
   end
 
   # Other scopes may use custom stacks.
