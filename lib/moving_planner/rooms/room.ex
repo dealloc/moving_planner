@@ -17,7 +17,7 @@ defmodule MovingPlanner.Rooms.Room do
     |> validate_required([:name, :letter])
     |> update_change(:letter, &String.upcase/1)
     |> validate_length(:letter, min: 1, max: 3)
-    |> validate_format(:letter, ~r/^[A-Z]+$/, message: "must be letters only")
+    |> validate_format(:letter, ~r/^[A-Z0-9]+$/, message: "must be letters or digits only")
     |> validate_exclusion(:letter, ["N"], message: "reserved for unassigned boxes")
     |> unique_constraint(:letter)
   end
