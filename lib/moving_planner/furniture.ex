@@ -4,6 +4,11 @@ defmodule MovingPlanner.Furniture do
   alias MovingPlanner.Repo
   alias MovingPlanner.Furniture.Piece
 
+  @pubsub MovingPlanner.PubSub
+  @topic "furniture"
+
+  def subscribe, do: Phoenix.PubSub.subscribe(@pubsub, @topic)
+
   @next_status %{
     pending: :disassembled,
     disassembled: :in_transit,
@@ -29,15 +34,17 @@ defmodule MovingPlanner.Furniture do
     %Piece{}
     |> Piece.changeset(attrs)
     |> Repo.insert()
+    |> tap_broadcast()
   end
 
   def update_piece(%Piece{} = piece, attrs) do
     piece
     |> Piece.changeset(attrs)
     |> Repo.update()
+    |> tap_broadcast()
   end
 
-  def delete_piece(%Piece{} = piece), do: Repo.delete(piece)
+  def delete_piece(%Piece{} = piece), do: Repo.delete(piece) |> tap_broadcast()
 
   def change_piece(%Piece{} = piece \\ %Piece{}, attrs \\ %{}) do
     Piece.changeset(piece, attrs)
@@ -51,4 +58,11 @@ defmodule MovingPlanner.Furniture do
   def set_status(%Piece{} = piece, status) do
     update_piece(piece, %{status: status})
   end
+
+  defp tap_broadcast({:ok, _} = result) do
+    Phoenix.PubSub.broadcast(@pubsub, @topic, :updated)
+    result
+  end
+
+  defp tap_broadcast(result), do: result
 end

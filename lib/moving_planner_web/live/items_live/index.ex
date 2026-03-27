@@ -5,6 +5,8 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
   alias MovingPlanner.Inventory.Box
 
   def mount(_params, _session, socket) do
+    if connected?(socket), do: Inventory.subscribe()
+
     {:ok,
      assign(socket,
        page_title: "Items",
@@ -14,6 +16,16 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
        search: "",
        selected_tag_ids: []
      )}
+  end
+
+  def handle_info(:updated, socket) do
+    items =
+      Inventory.list_items(
+        search: socket.assigns.search,
+        tag_ids: socket.assigns.selected_tag_ids
+      )
+
+    {:noreply, assign(socket, items: items, tags: Inventory.list_tags())}
   end
 
   def handle_event("search", %{"search" => term}, socket) do

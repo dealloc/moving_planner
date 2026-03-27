@@ -6,6 +6,8 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
   alias MovingPlanner.Rooms
 
   def mount(%{"id" => id}, _session, socket) do
+    if connected?(socket), do: Inventory.subscribe()
+
     box = Inventory.get_box!(id)
 
     {:ok,
@@ -17,6 +19,11 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
        item_form: nil,
        editing_item_id: nil
      )}
+  end
+
+  def handle_info(:updated, socket) do
+    box = Inventory.get_box!(socket.assigns.box.id)
+    {:noreply, assign(socket, box: box, page_title: "Box #{box.code}")}
   end
 
   def handle_params(_params, _uri, socket), do: {:noreply, socket}

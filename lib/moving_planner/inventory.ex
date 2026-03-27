@@ -4,6 +4,11 @@ defmodule MovingPlanner.Inventory do
   alias MovingPlanner.Inventory.{Box, Item, Tag}
   alias MovingPlanner.Rooms
 
+  @pubsub MovingPlanner.PubSub
+  @topic "inventory"
+
+  def subscribe, do: Phoenix.PubSub.subscribe(@pubsub, @topic)
+
   # ---------------------------------------------------------------------------
   # Box queries
   # ---------------------------------------------------------------------------
@@ -85,6 +90,7 @@ defmodule MovingPlanner.Inventory do
           Repo.rollback(cs)
       end
     end)
+    |> tap_broadcast()
   end
 
   def update_box(%Box{} = box, attrs) do
@@ -101,6 +107,7 @@ defmodule MovingPlanner.Inventory do
       error ->
         error
     end
+    |> tap_broadcast()
   end
 
   def depart_box(%Box{} = box) do
@@ -111,7 +118,7 @@ defmodule MovingPlanner.Inventory do
     update_box(box, %{arrived_at: DateTime.utc_now() |> DateTime.truncate(:second)})
   end
 
-  def delete_box(%Box{} = box), do: Repo.delete(box)
+  def delete_box(%Box{} = box), do: Repo.delete(box) |> tap_broadcast()
 
   def change_box(%Box{} = box \\ %Box{}, attrs \\ %{}) do
     Box.changeset(box, attrs)
@@ -147,6 +154,7 @@ defmodule MovingPlanner.Inventory do
     %Item{}
     |> Item.with_tags_changeset(attrs, tags)
     |> Repo.insert()
+    |> tap_broadcast()
   end
 
   def update_item(%Item{} = item, attrs) do
@@ -156,9 +164,10 @@ defmodule MovingPlanner.Inventory do
     |> Repo.preload(:tags)
     |> Item.with_tags_changeset(attrs, tags)
     |> Repo.update()
+    |> tap_broadcast()
   end
 
-  def delete_item(%Item{} = item), do: Repo.delete(item)
+  def delete_item(%Item{} = item), do: Repo.delete(item) |> tap_broadcast()
 
   def change_item(%Item{} = item \\ %Item{}, attrs \\ %{}) do
     Item.changeset(item, attrs)
@@ -270,4 +279,11 @@ defmodule MovingPlanner.Inventory do
     search = "%#{term}%"
     where(query, [i], ilike(i.name, ^search))
   end
+
+  defp tap_broadcast({:ok, _} = result) do
+    Phoenix.PubSub.broadcast(@pubsub, @topic, :updated)
+    result
+  end
+
+  defp tap_broadcast(result), do: result
 end

@@ -4,6 +4,10 @@ defmodule MovingPlanner.Rooms do
   alias MovingPlanner.Rooms.Room
 
   @n_letter "N"
+  @pubsub MovingPlanner.PubSub
+  @topic "rooms"
+
+  def subscribe, do: Phoenix.PubSub.subscribe(@pubsub, @topic)
 
   def list_rooms(opts \\ []) do
     exclude_n = Keyword.get(opts, :exclude_n, false)
@@ -35,12 +39,14 @@ defmodule MovingPlanner.Rooms do
     %Room{}
     |> Room.changeset(attrs)
     |> Repo.insert()
+    |> tap_broadcast()
   end
 
   def update_room(%Room{} = room, attrs) do
     room
     |> Room.changeset(attrs)
     |> Repo.update()
+    |> tap_broadcast()
   end
 
   def delete_room(%Room{} = room) do
@@ -50,7 +56,7 @@ defmodule MovingPlanner.Rooms do
     if box_count > 0 do
       {:error, :has_boxes}
     else
-      Repo.delete(room)
+      Repo.delete(room) |> tap_broadcast()
     end
   end
 
@@ -72,4 +78,11 @@ defmodule MovingPlanner.Rooms do
   end
 
   defp maybe_exclude_n(query, _), do: query
+
+  defp tap_broadcast({:ok, _} = result) do
+    Phoenix.PubSub.broadcast(@pubsub, @topic, :updated)
+    result
+  end
+
+  defp tap_broadcast(result), do: result
 end

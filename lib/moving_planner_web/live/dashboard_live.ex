@@ -5,6 +5,11 @@ defmodule MovingPlannerWeb.DashboardLive do
   alias MovingPlanner.Planning
 
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Inventory.subscribe()
+      Planning.subscribe()
+    end
+
     stats = Inventory.box_stats()
     todos = Planning.list_todos(status: :in_progress, order_by: :due_date)
 
@@ -14,6 +19,14 @@ defmodule MovingPlannerWeb.DashboardLive do
        current_page: :dashboard,
        stats: stats,
        todos: todos
+     )}
+  end
+
+  def handle_info(:updated, socket) do
+    {:noreply,
+     assign(socket,
+       stats: Inventory.box_stats(),
+       todos: Planning.list_todos(status: :in_progress, order_by: :due_date)
      )}
   end
 

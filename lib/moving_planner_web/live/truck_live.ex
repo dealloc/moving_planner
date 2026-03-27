@@ -6,12 +6,25 @@ defmodule MovingPlannerWeb.TruckLive do
   alias MovingPlanner.Inventory.Box
 
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Inventory.subscribe()
+      Furniture.subscribe()
+    end
+
     {:ok,
      assign(socket,
        boxes: Inventory.list_boxes(),
        pieces: Furniture.list_pieces(),
        tab: :boxes,
        search: ""
+     )}
+  end
+
+  def handle_info(:updated, socket) do
+    {:noreply,
+     assign(socket,
+       boxes: Inventory.list_boxes(),
+       pieces: Furniture.list_pieces()
      )}
   end
 

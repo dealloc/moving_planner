@@ -4,6 +4,10 @@ defmodule MovingPlanner.Planning do
   alias MovingPlanner.Planning.Todo
 
   @next_status %{pending: :in_progress, in_progress: :done, done: :pending}
+  @pubsub MovingPlanner.PubSub
+  @topic "planning"
+
+  def subscribe, do: Phoenix.PubSub.subscribe(@pubsub, @topic)
 
   def list_todos(opts \\ []) do
     Todo
@@ -19,15 +23,17 @@ defmodule MovingPlanner.Planning do
     %Todo{}
     |> Todo.changeset(attrs)
     |> Repo.insert()
+    |> tap_broadcast()
   end
 
   def update_todo(%Todo{} = todo, attrs) do
     todo
     |> Todo.changeset(attrs)
     |> Repo.update()
+    |> tap_broadcast()
   end
 
-  def delete_todo(%Todo{} = todo), do: Repo.delete(todo)
+  def delete_todo(%Todo{} = todo), do: Repo.delete(todo) |> tap_broadcast()
 
   def change_todo(%Todo{} = todo \\ %Todo{}, attrs \\ %{}) do
     Todo.changeset(todo, attrs)
@@ -59,4 +65,11 @@ defmodule MovingPlanner.Planning do
   defp apply_order(query, _) do
     order_by(query, [t], asc: t.inserted_at)
   end
+
+  defp tap_broadcast({:ok, _} = result) do
+    Phoenix.PubSub.broadcast(@pubsub, @topic, :updated)
+    result
+  end
+
+  defp tap_broadcast(result), do: result
 end

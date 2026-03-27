@@ -5,6 +5,8 @@ defmodule MovingPlannerWeb.TodosLive.Index do
   alias MovingPlanner.Planning.Todo
 
   def mount(_params, _session, socket) do
+    if connected?(socket), do: Planning.subscribe()
+
     {:ok,
      assign(socket,
        page_title: "Todos",
@@ -14,6 +16,10 @@ defmodule MovingPlannerWeb.TodosLive.Index do
        form: nil,
        editing_id: nil
      )}
+  end
+
+  def handle_info(:updated, socket) do
+    {:noreply, assign(socket, todos: load_todos(socket.assigns.filter))}
   end
 
   def handle_event("filter", %{"status" => status}, socket) do

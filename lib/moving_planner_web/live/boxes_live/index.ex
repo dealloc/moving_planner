@@ -5,6 +5,11 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
   alias MovingPlanner.Rooms
 
   def mount(_params, _session, socket) do
+    if connected?(socket) do
+      Inventory.subscribe()
+      Rooms.subscribe()
+    end
+
     {:ok,
      assign(socket,
        page_title: "Boxes",
@@ -15,6 +20,14 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
        filter_status: nil,
        filter_fragile: false,
        form: nil
+     )}
+  end
+
+  def handle_info(:updated, socket) do
+    {:noreply,
+     assign(socket,
+       boxes: reload_boxes(socket.assigns),
+       rooms: Rooms.list_rooms()
      )}
   end
 

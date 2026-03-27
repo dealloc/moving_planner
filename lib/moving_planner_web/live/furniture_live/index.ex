@@ -5,6 +5,8 @@ defmodule MovingPlannerWeb.FurnitureLive.Index do
   alias MovingPlanner.Rooms
 
   def mount(_params, _session, socket) do
+    if connected?(socket), do: Furniture.subscribe()
+
     {:ok,
      assign(socket,
        page_title: "Furniture",
@@ -13,6 +15,10 @@ defmodule MovingPlannerWeb.FurnitureLive.Index do
        form: nil,
        editing_piece: nil
      )}
+  end
+
+  def handle_info(:updated, socket) do
+    {:noreply, assign(socket, pieces: Furniture.list_pieces())}
   end
 
   def handle_params(_params, _uri, %{assigns: %{live_action: :new}} = socket) do

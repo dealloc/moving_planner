@@ -4,6 +4,8 @@ defmodule MovingPlannerWeb.RoomsLive.Index do
   alias MovingPlanner.Rooms
 
   def mount(_params, _session, socket) do
+    if connected?(socket), do: Rooms.subscribe()
+
     {:ok,
      assign(socket,
        page_title: "Rooms",
@@ -12,6 +14,10 @@ defmodule MovingPlannerWeb.RoomsLive.Index do
        form: nil,
        editing_id: nil
      )}
+  end
+
+  def handle_info(:updated, socket) do
+    {:noreply, assign(socket, rooms: list_rooms_with_counts())}
   end
 
   def handle_event("new_room", _params, socket) do
