@@ -2,6 +2,7 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
   use MovingPlannerWeb, :live_view
 
   alias MovingPlanner.Inventory
+  alias MovingPlanner.Inventory.Box
 
   def mount(_params, _session, socket) do
     {:ok,
@@ -108,7 +109,7 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
                 <td>{item.name}</td>
                 <td>
                   <.link navigate={~p"/boxes/#{item.box_id}"} class="font-mono link link-hover">
-                    {item.box.code}
+                    {Box.compute_code(item.box)}
                   </.link>
                 </td>
                 <td>
