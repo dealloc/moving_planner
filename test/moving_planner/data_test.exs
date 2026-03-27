@@ -5,6 +5,7 @@ defmodule MovingPlanner.DataTest do
   alias MovingPlanner.Rooms.Room
   alias MovingPlanner.Inventory.{Box, Item, Tag}
   alias MovingPlanner.Planning.Todo
+  alias MovingPlanner.Furniture.Piece, as: FurniturePiece
 
   # ---------------------------------------------------------------------------
   # Fixtures
@@ -61,7 +62,7 @@ defmodule MovingPlanner.DataTest do
 
     test "includes version and exported_at fields" do
       data = Data.export_json() |> Jason.decode!()
-      assert data["version"] == 1
+      assert data["version"] == 2
       assert is_binary(data["exported_at"])
     end
 
@@ -285,6 +286,45 @@ defmodule MovingPlanner.DataTest do
       assert [%Tag{name: "appliance"}] = restored_item.tags
 
       assert Repo.get_by(Todo, title: "Pack kitchen")
+    end
+
+    test "returns counts including furniture" do
+      json =
+        Jason.encode!(%{
+          version: 2,
+          rooms: [%{id: 1, name: "R1", letter: "A"}],
+          boxes: [],
+          todos: [],
+          furniture: [
+            %{id: 1, name: "Sofa", room_letter: "A", status: "pending", notes: nil}
+          ]
+        })
+
+      assert {:ok, %{rooms: 1, boxes: 0, todos: 0, furniture: 1}} = Data.import_json(json)
+    end
+
+    test "exports and imports furniture pieces" do
+      room = insert_room(name: "Living Room", letter: "L")
+      Repo.insert!(%FurniturePiece{name: "Sofa", status: :disassembled, room_id: room.id})
+
+      json = Data.export_json()
+      data = Jason.decode!(json)
+
+      assert [%{"name" => "Sofa", "status" => "disassembled", "room_letter" => "L"}] =
+               data["furniture"]
+    end
+
+    test "version 1 import succeeds with no furniture key" do
+      json =
+        Jason.encode!(%{
+          version: 1,
+          rooms: [],
+          boxes: [],
+          todos: []
+        })
+
+      assert {:ok, counts} = Data.import_json(json)
+      assert counts.furniture == 0
     end
   end
 end

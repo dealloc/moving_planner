@@ -5,8 +5,10 @@ defmodule MovingPlanner.Data do
   alias MovingPlanner.Rooms.Room
   alias MovingPlanner.Inventory.{Box, Item, Tag}
   alias MovingPlanner.Planning.Todo
+  alias MovingPlanner.Furniture
+  alias MovingPlanner.Furniture.Piece, as: FurniturePiece
 
-  @current_version 1
+  @current_version 2
 
   # ---------------------------------------------------------------------------
   # Export
@@ -16,13 +18,15 @@ defmodule MovingPlanner.Data do
     rooms = Repo.all(from r in Room, order_by: r.id)
     boxes = Repo.all(from b in Box, order_by: b.id) |> Repo.preload(items: :tags)
     todos = Repo.all(from t in Todo, order_by: t.id)
+    pieces = Furniture.list_pieces()
 
     %{
       version: @current_version,
       exported_at: DateTime.utc_now() |> DateTime.to_iso8601(),
       rooms: Enum.map(rooms, &serialize_room/1),
       boxes: Enum.map(boxes, &serialize_box/1),
-      todos: Enum.map(todos, &serialize_todo/1)
+      todos: Enum.map(todos, &serialize_todo/1),
+      furniture: Enum.map(pieces, &serialize_piece/1)
     }
     |> Jason.encode!(pretty: true)
   end
@@ -42,6 +46,7 @@ defmodule MovingPlanner.Data do
         Repo.delete_all(Item)
         Repo.delete_all(Box)
         Repo.delete_all(Todo)
+        Repo.delete_all(FurniturePiece)
         Repo.delete_all(Room)
 
         for r <- Map.get(data, "rooms", []) do
@@ -99,10 +104,32 @@ defmodule MovingPlanner.Data do
           })
         end
 
+        for p <- Map.get(data, "furniture", []) do
+          room_id =
+            case p["room_letter"] do
+              nil ->
+                nil
+
+              letter ->
+                Repo.one(from r in Room, where: r.letter == ^letter, select: r.id)
+            end
+
+          Repo.insert!(%FurniturePiece{
+            id: p["id"],
+            name: p["name"],
+            status: String.to_existing_atom(p["status"]),
+            notes: p["notes"],
+            room_id: room_id,
+            inserted_at: now,
+            updated_at: now
+          })
+        end
+
         counts = %{
           rooms: length(Map.get(data, "rooms", [])),
           boxes: length(Map.get(data, "boxes", [])),
-          todos: length(Map.get(data, "todos", []))
+          todos: length(Map.get(data, "todos", [])),
+          furniture: length(Map.get(data, "furniture", []))
         }
 
         counts
@@ -133,6 +160,16 @@ defmodule MovingPlanner.Data do
       name: i.name,
       fragile: i.fragile,
       tags: Enum.map(i.tags, & &1.name)
+    }
+  end
+
+  defp serialize_piece(p) do
+    %{
+      id: p.id,
+      name: p.name,
+      status: p.status,
+      notes: p.notes,
+      room_letter: if(p.room, do: p.room.letter, else: nil)
     }
   end
 

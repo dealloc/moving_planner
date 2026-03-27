@@ -115,6 +115,31 @@ defmodule MovingPlannerWeb.Layouts do
               </li>
               <li>
                 <.link
+                  navigate={~p"/furniture"}
+                  class={if @current_page == :furniture, do: "active", else: ""}
+                >
+                  <.icon name="hero-table-cells" class="size-4" /> Furniture
+                </.link>
+              </li>
+              <li class="menu-title text-base-content/30 text-xs pt-2">Move day</li>
+              <li>
+                <.link
+                  navigate={~p"/truck/depart"}
+                  class={if @current_page == :depart, do: "active", else: ""}
+                >
+                  <.icon name="hero-truck" class="size-4" /> Depart
+                </.link>
+              </li>
+              <li>
+                <.link
+                  navigate={~p"/truck/arrive"}
+                  class={if @current_page == :arrive, do: "active", else: ""}
+                >
+                  <.icon name="hero-check-circle" class="size-4" /> Arrive
+                </.link>
+              </li>
+              <li>
+                <.link
                   navigate={~p"/data"}
                   class={if @current_page == :data, do: "active", else: ""}
                 >

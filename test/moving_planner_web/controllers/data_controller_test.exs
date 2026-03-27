@@ -57,7 +57,7 @@ defmodule MovingPlannerWeb.DataControllerTest do
     test "export body is valid JSON with version field", %{conn: conn} do
       conn = conn |> authed() |> get(~p"/export")
       data = json_response(conn, 200)
-      assert data["version"] == 1
+      assert data["version"] == 2
       assert is_list(data["rooms"])
       assert is_list(data["boxes"])
       assert is_list(data["todos"])
