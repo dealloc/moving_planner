@@ -10,16 +10,41 @@ defmodule MovingPlannerWeb.FurnitureLive.Index do
        page_title: "Furniture",
        current_page: :furniture,
        pieces: Furniture.list_pieces(),
-       form: nil
+       form: nil,
+       editing_piece: nil
      )}
   end
 
   def handle_params(_params, _uri, %{assigns: %{live_action: :new}} = socket) do
-    {:noreply, assign(socket, form: to_form(Furniture.change_piece()))}
+    {:noreply, assign(socket, form: to_form(Furniture.change_piece()), editing_piece: nil)}
+  end
+
+  def handle_params(%{"id" => id}, _uri, %{assigns: %{live_action: :edit}} = socket) do
+    piece = Furniture.get_piece!(id)
+    {:noreply, assign(socket, form: to_form(Furniture.change_piece(piece)), editing_piece: piece)}
   end
 
   def handle_params(_params, _uri, socket) do
-    {:noreply, assign(socket, form: nil)}
+    {:noreply, assign(socket, form: nil, editing_piece: nil)}
+  end
+
+  def handle_event(
+        "save_piece",
+        %{"piece" => params},
+        %{assigns: %{editing_piece: piece}} = socket
+      )
+      when not is_nil(piece) do
+    case Furniture.update_piece(piece, params) do
+      {:ok, updated} ->
+        {:noreply,
+         socket
+         |> put_flash(:info, "#{updated.name} updated.")
+         |> push_patch(to: ~p"/furniture")
+         |> assign(pieces: Furniture.list_pieces())}
+
+      {:error, changeset} ->
+        {:noreply, assign(socket, form: to_form(changeset))}
+    end
   end
 
   def handle_event("save_piece", %{"piece" => params}, socket) do
@@ -86,10 +111,12 @@ defmodule MovingPlannerWeb.FurnitureLive.Index do
           </.link>
         </div>
 
-        <%!-- New furniture modal --%>
-        <div :if={@live_action == :new} class="modal modal-open">
+        <%!-- New / Edit furniture modal --%>
+        <div :if={@live_action in [:new, :edit]} class="modal modal-open">
           <div class="modal-box">
-            <h3 class="font-bold text-lg mb-4">New Furniture</h3>
+            <h3 class="font-bold text-lg mb-4">
+              {if @live_action == :edit, do: "Edit Furniture", else: "New Furniture"}
+            </h3>
             <.form for={@form} phx-submit="save_piece" class="space-y-4">
               <div class="form-control">
                 <label class="label label-text">Name</label>
@@ -128,7 +155,9 @@ defmodule MovingPlannerWeb.FurnitureLive.Index do
                 >{@form[:notes].value}</textarea>
               </div>
               <div class="modal-action">
-                <button type="submit" class="btn btn-primary">Add Furniture</button>
+                <button type="submit" class="btn btn-primary">
+                  {if @live_action == :edit, do: "Save Changes", else: "Add Furniture"}
+                </button>
                 <.link navigate={~p"/furniture"} class="btn btn-ghost">Cancel</.link>
               </div>
             </.form>
@@ -170,7 +199,10 @@ defmodule MovingPlannerWeb.FurnitureLive.Index do
                 <td class="text-base-content/60 text-sm max-w-xs truncate">
                   {piece.notes || ""}
                 </td>
-                <td>
+                <td class="flex gap-1">
+                  <.link navigate={~p"/furniture/#{piece.id}/edit"} class="btn btn-ghost btn-xs">
+                    <.icon name="hero-pencil" class="size-3" />
+                  </.link>
                   <button
                     class="btn btn-ghost btn-xs text-error"
                     phx-click="delete_piece"

@@ -40,6 +40,7 @@ defmodule MovingPlannerWeb.Router do
       live "/todos", TodosLive.Index, :index
       live "/furniture", FurnitureLive.Index, :index
       live "/furniture/new", FurnitureLive.Index, :new
+      live "/furniture/:id/edit", FurnitureLive.Index, :edit
       live "/truck/depart", TruckLive, :depart
       live "/truck/arrive", TruckLive, :arrive
     end
