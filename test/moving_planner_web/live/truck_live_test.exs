@@ -22,6 +22,12 @@ defmodule MovingPlannerWeb.TruckLiveTest do
     box
   end
 
+  defp insert_sealed_box(room) do
+    {:ok, box} = Inventory.create_box(%{"room_id" => room.id})
+    {:ok, box} = Inventory.seal_box(box)
+    box
+  end
+
   defp insert_piece(attrs) do
     {:ok, piece} = Furniture.create_piece(Enum.into(attrs, %{name: "Sofa"}))
     piece
@@ -34,9 +40,9 @@ defmodule MovingPlannerWeb.TruckLiveTest do
       assert html =~ "Furniture"
     end
 
-    test "shows unloaded box with DEPART button", %{conn: conn} do
+    test "shows sealed box with DEPART button", %{conn: conn} do
       room = insert_room()
-      box = insert_box(room)
+      box = insert_sealed_box(room)
       {:ok, _view, html} = live(conn, ~p"/truck/depart")
       assert html =~ box.serial |> Integer.to_string() |> String.pad_leading(3, "0")
       assert html =~ "DEPART"
@@ -44,7 +50,7 @@ defmodule MovingPlannerWeb.TruckLiveTest do
 
     test "departing a box sets departed_at", %{conn: conn} do
       room = insert_room()
-      box = insert_box(room)
+      box = insert_sealed_box(room)
       {:ok, view, _html} = live(conn, ~p"/truck/depart")
 
       view
@@ -56,8 +62,8 @@ defmodule MovingPlannerWeb.TruckLiveTest do
 
     test "departed box sinks to bottom of list", %{conn: conn} do
       room = insert_room()
-      box1 = insert_box(room)
-      box2 = insert_box(room)
+      box1 = insert_sealed_box(room)
+      box2 = insert_sealed_box(room)
       Inventory.depart_box(Inventory.get_box!(box1.id))
 
       {:ok, _view, html} = live(conn, ~p"/truck/depart")
@@ -117,7 +123,7 @@ defmodule MovingPlannerWeb.TruckLiveTest do
 
     test "arriving a box sets arrived_at", %{conn: conn} do
       room = insert_room()
-      box = insert_box(room)
+      box = insert_sealed_box(room)
       Inventory.depart_box(Inventory.get_box!(box.id))
 
       {:ok, view, _html} = live(conn, ~p"/truck/arrive")

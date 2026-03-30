@@ -138,6 +138,7 @@ defmodule MovingPlannerWeb.TruckLive do
   defp box_done?(%Box{departed_at: d}, :depart), do: d != nil
   defp box_done?(%Box{arrived_at: a}, :arrive), do: a != nil
 
+  defp box_inactive?(%Box{sealed: false}, :depart), do: true
   defp box_inactive?(%Box{departed_at: nil}, :arrive), do: true
   defp box_inactive?(_, _), do: false
 

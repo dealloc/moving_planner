@@ -51,7 +51,7 @@ defmodule MovingPlannerWeb.FurnitureLiveTest do
       {:ok, view, _html} = live(conn, ~p"/furniture/new")
 
       view
-      |> form("form", piece: %{name: "Desk", room_id: room.id})
+      |> form("form[phx-submit]", piece: %{name: "Desk", room_id: room.id})
       |> render_submit()
 
       assert [%{name: "Desk"}] = Furniture.list_pieces()
@@ -62,7 +62,7 @@ defmodule MovingPlannerWeb.FurnitureLiveTest do
 
       html =
         view
-        |> form("form", piece: %{name: ""})
+        |> form("form[phx-submit]", piece: %{name: ""})
         |> render_submit()
 
       assert html =~ "can&#39;t be blank"

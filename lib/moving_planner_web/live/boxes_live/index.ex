@@ -19,6 +19,7 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
        filter_room_id: nil,
        filter_status: nil,
        filter_fragile: false,
+       filter_sealed: false,
        form: nil
      )}
   end
@@ -55,15 +56,23 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
       end
 
     fragile = params["fragile"] == "true"
+    sealed = params["sealed"] == "true"
 
-    boxes = Inventory.list_boxes(room_id: room_id, status: status, fragile: if(fragile, do: true))
+    boxes =
+      Inventory.list_boxes(
+        room_id: room_id,
+        status: status,
+        fragile: if(fragile, do: true),
+        sealed: if(sealed, do: true)
+      )
 
     {:noreply,
      assign(socket,
        boxes: boxes,
        filter_room_id: room_id,
        filter_status: status,
-       filter_fragile: fragile
+       filter_fragile: fragile,
+       filter_sealed: sealed
      )}
   end
 
@@ -73,8 +82,7 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
         {:noreply,
          socket
          |> put_flash(:info, "Box #{box.code} created.")
-         |> push_patch(to: ~p"/boxes")
-         |> assign(boxes: reload_boxes(socket.assigns))}
+         |> push_navigate(to: ~p"/boxes/#{box.id}")}
 
       {:error, changeset} ->
         {:noreply, assign(socket, form: to_form(changeset))}
@@ -130,7 +138,8 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
     Inventory.list_boxes(
       room_id: assigns.filter_room_id,
       status: assigns.filter_status,
-      fragile: if(assigns.filter_fragile, do: true)
+      fragile: if(assigns.filter_fragile, do: true),
+      sealed: if(assigns.filter_sealed, do: true)
     )
   end
 
@@ -153,7 +162,7 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
       <div class="space-y-4">
         <div class="flex items-center justify-between">
           <h1 class="text-2xl font-bold">Boxes</h1>
-          <.link navigate={~p"/boxes/new"} class="btn btn-primary btn-sm">
+          <.link navigate={~p"/boxes/new"} class="btn btn-primary btn-sm" data-shortcut-new>
             <.icon name="hero-plus" class="size-4" /> New Box
           </.link>
         </div>
@@ -200,6 +209,17 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
               checked={@filter_fragile}
             />
             <span class="label-text">Fragile only</span>
+          </label>
+          <label class="label cursor-pointer gap-2">
+            <input
+              type="checkbox"
+              class="checkbox checkbox-sm"
+              phx-change="filter"
+              name="sealed"
+              value="true"
+              checked={@filter_sealed}
+            />
+            <span class="label-text">Sealed only</span>
           </label>
         </div>
 
@@ -251,9 +271,15 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
             <tbody>
               <tr :for={box <- @boxes} id={"box-#{box.id}"}>
                 <td>
-                  <.link navigate={~p"/boxes/#{box.id}"} class="font-mono font-medium link link-hover">
-                    {box.code}
-                  </.link>
+                  <div class="flex items-center gap-1">
+                    <.link
+                      navigate={~p"/boxes/#{box.id}"}
+                      class="font-mono font-medium link link-hover"
+                    >
+                      {box.code}
+                    </.link>
+                    <.icon :if={box.sealed} name="hero-lock-closed" class="size-3 text-warning" />
+                  </div>
                 </td>
                 <td>
                   <span class="badge badge-outline badge-sm">{box.room.letter}</span>

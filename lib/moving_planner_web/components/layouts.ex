@@ -32,7 +32,12 @@ defmodule MovingPlannerWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <div class="drawer lg:drawer-open">
+    <div
+      id="app-layout"
+      class="drawer lg:drawer-open"
+      phx-hook="KeyboardShortcuts"
+      data-page={@current_page}
+    >
       <input id="nav-drawer" type="checkbox" class="drawer-toggle" />
 
       <div class="drawer-content flex flex-col min-h-screen">
@@ -152,18 +157,62 @@ defmodule MovingPlannerWeb.Layouts do
           <%!-- Theme toggle + sign out --%>
           <div class="p-4 border-t border-base-300 flex items-center justify-between">
             <.theme_toggle />
-            <.link
-              href={~p"/login"}
-              method="delete"
-              class="btn btn-ghost btn-xs text-base-content/50"
-              title="Sign out"
-            >
-              <.icon name="hero-arrow-right-on-rectangle" class="size-4" />
-            </.link>
+            <div class="flex items-center gap-1">
+              <button
+                onclick="document.getElementById('shortcuts-modal').showModal()"
+                class="btn btn-ghost btn-xs text-base-content/50"
+                title="Keyboard shortcuts (?)"
+              >
+                <kbd class="kbd kbd-xs">?</kbd>
+              </button>
+              <.link
+                href={~p"/login"}
+                method="delete"
+                class="btn btn-ghost btn-xs text-base-content/50"
+                title="Sign out"
+              >
+                <.icon name="hero-arrow-right-on-rectangle" class="size-4" />
+              </.link>
+            </div>
           </div>
         </aside>
       </div>
     </div>
+
+    <%!-- Keyboard shortcuts modal --%>
+    <dialog id="shortcuts-modal" class="modal">
+      <div class="modal-box max-w-sm">
+        <h3 class="font-bold text-lg mb-4">Keyboard Shortcuts</h3>
+        <table class="table table-sm">
+          <tbody>
+            <tr>
+              <td><kbd class="kbd kbd-sm">n</kbd></td>
+              <td>New item / box / furniture / todo</td>
+            </tr>
+            <tr>
+              <td><kbd class="kbd kbd-sm">Esc</kbd></td>
+              <td>Close modal or cancel form</td>
+            </tr>
+            <tr>
+              <td>
+                <kbd class="kbd kbd-sm">⌘</kbd> + <kbd class="kbd kbd-sm">↵</kbd>
+              </td>
+              <td>Submit form</td>
+            </tr>
+            <tr>
+              <td><kbd class="kbd kbd-sm">?</kbd></td>
+              <td>Show this help</td>
+            </tr>
+          </tbody>
+        </table>
+        <div class="modal-action">
+          <form method="dialog">
+            <button class="btn btn-sm">Close</button>
+          </form>
+        </div>
+      </div>
+      <form method="dialog" class="modal-backdrop"><button>close</button></form>
+    </dialog>
 
     <.flash_group flash={@flash} />
     """

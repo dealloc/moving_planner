@@ -4,6 +4,7 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
   alias MovingPlanner.Inventory
   alias MovingPlanner.Inventory.Item
   alias MovingPlanner.Rooms
+  alias Phoenix.LiveView.JS
 
   def mount(%{"id" => id}, _session, socket) do
     if connected?(socket), do: Inventory.subscribe()
@@ -105,13 +106,41 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
     end
   end
 
-  def handle_event("update_box", %{"box" => params}, socket) do
-    case Inventory.update_box(socket.assigns.box, params) do
+  def handle_event("update_box", params, socket) do
+    room_id = params["room_id"] || get_in(params, ["box", "room_id"])
+
+    case Inventory.update_box(socket.assigns.box, %{"room_id" => room_id}) do
       {:ok, box} ->
-        {:noreply, socket |> assign(box: box) |> put_flash(:info, "Box updated.")}
+        {:noreply,
+         socket
+         |> assign(box: box, page_title: "Box #{box.code}")
+         |> put_flash(:info, "Box updated.")}
 
       {:error, _} ->
         {:noreply, put_flash(socket, :error, "Could not update box.")}
+    end
+  end
+
+  def handle_event("seal_box", _params, socket) do
+    case Inventory.seal_box(socket.assigns.box) do
+      {:ok, box} ->
+        {:noreply,
+         socket
+         |> assign(box: box, page_title: "Box #{box.code}")
+         |> put_flash(:info, "Box sealed. Code #{box.code} is now fixed.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not seal box.")}
+    end
+  end
+
+  def handle_event("unseal_box", _params, socket) do
+    case Inventory.unseal_box(socket.assigns.box) do
+      {:ok, box} ->
+        {:noreply, socket |> assign(box: box) |> put_flash(:info, "Box unsealed.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not unseal box.")}
     end
   end
 
@@ -150,17 +179,29 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
           </div>
 
           <div class="flex gap-2 flex-wrap justify-end">
-            <select
-              class="select select-bordered select-sm"
-              phx-change="update_box"
-              name="box[room_id]"
-            >
-              <option :for={{name, id} <- @rooms} value={id} selected={@box.room_id == id}>
-                {name}
-              </option>
-            </select>
+            <form phx-change="update_box">
+              <select class="select select-bordered select-sm" name="room_id">
+                <option :for={{name, id} <- @rooms} value={id} selected={@box.room_id == id}>
+                  {name}
+                </option>
+              </select>
+            </form>
             <button
-              :if={!@box.departed_at}
+              :if={!@box.sealed && !@box.departed_at}
+              class="btn btn-warning btn-sm"
+              phx-click="seal_box"
+            >
+              <.icon name="hero-lock-closed" class="size-4" /> Seal
+            </button>
+            <button
+              :if={@box.sealed && !@box.departed_at}
+              class="btn btn-ghost btn-sm"
+              phx-click="unseal_box"
+            >
+              <.icon name="hero-lock-open" class="size-4" /> Unseal
+            </button>
+            <button
+              :if={@box.sealed && !@box.departed_at}
               class="btn btn-info btn-sm"
               phx-click="depart_box"
             >
@@ -177,7 +218,15 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
         </div>
 
         <%!-- Status timeline --%>
-        <div class="flex items-center gap-2 text-sm">
+        <div class="flex items-center gap-2 text-sm flex-wrap">
+          <div class={["badge", if(@box.sealed, do: "badge-warning", else: "badge-ghost")]}>
+            <.icon
+              name={if @box.sealed, do: "hero-lock-closed", else: "hero-lock-open"}
+              class="size-3 mr-1"
+            />
+            {if @box.sealed, do: "Sealed", else: "Not sealed"}
+          </div>
+          <.icon name="hero-arrow-right" class="size-3 text-base-content/30" />
           <div class={["badge", if(@box.departed_at, do: "badge-info", else: "badge-ghost")]}>
             <.icon name="hero-truck" class="size-3 mr-1" />
             <span :if={@box.departed_at}>
@@ -218,36 +267,29 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
             </div>
 
             <%!-- Add/edit item form --%>
-            <div :if={@item_form} class="card bg-base-100 shadow-sm mt-2">
+            <div
+              :if={@item_form}
+              class="card bg-base-100 shadow-sm mt-2"
+              data-form-open="true"
+              data-cancel-event="cancel_item_form"
+            >
               <div class="card-body py-3 px-4">
                 <h3 class="font-medium text-sm">
                   {if @editing_item_id, do: "Edit Item", else: "New Item"}
                 </h3>
                 <.form for={@item_form} phx-submit="save_item" class="space-y-3">
-                  <div class="flex gap-2 flex-wrap">
-                    <div class="form-control flex-1 min-w-40">
-                      <input
-                        type="text"
-                        name={@item_form[:name].name}
-                        value={@item_form[:name].value}
-                        class="input input-bordered input-sm"
-                        placeholder="Item name"
-                        autofocus
-                      />
-                      <p :for={err <- @item_form[:name].errors} class="text-error text-xs mt-1">
-                        {translate_error(err)}
-                      </p>
-                    </div>
-                    <label class="label cursor-pointer gap-2">
-                      <input
-                        type="checkbox"
-                        name={@item_form[:fragile].name}
-                        value="true"
-                        checked={@item_form[:fragile].value}
-                        class="checkbox checkbox-sm checkbox-warning"
-                      />
-                      <span class="label-text">Fragile</span>
-                    </label>
+                  <div class="form-control">
+                    <input
+                      type="text"
+                      name={@item_form[:name].name}
+                      value={@item_form[:name].value}
+                      class="input input-bordered input-sm"
+                      placeholder="Item name"
+                      phx-mounted={JS.focus()}
+                    />
+                    <p :for={err <- @item_form[:name].errors} class="text-error text-xs mt-1">
+                      {translate_error(err)}
+                    </p>
                   </div>
                   <div class="form-control">
                     <input
@@ -261,6 +303,16 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
                       New tags are created automatically
                     </p>
                   </div>
+                  <label class="label cursor-pointer gap-2 justify-start">
+                    <input
+                      type="checkbox"
+                      name={@item_form[:fragile].name}
+                      value="true"
+                      checked={@item_form[:fragile].value}
+                      class="checkbox checkbox-sm checkbox-warning"
+                    />
+                    <span class="label-text">Fragile</span>
+                  </label>
                   <div class="flex gap-2">
                     <button type="submit" class="btn btn-primary btn-sm">Save</button>
                     <button

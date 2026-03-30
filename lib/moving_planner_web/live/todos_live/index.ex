@@ -132,7 +132,12 @@ defmodule MovingPlannerWeb.TodosLive.Index do
         </div>
 
         <%!-- New todo form --%>
-        <div :if={@form && !@editing_id} class="card bg-base-200 shadow">
+        <div
+          :if={@form && !@editing_id}
+          class="card bg-base-200 shadow"
+          data-form-open="true"
+          data-cancel-event="cancel_form"
+        >
           <div class="card-body py-4">
             <.form for={@form} phx-submit="save_todo" class="space-y-3">
               <div class="flex gap-2 flex-wrap">
@@ -224,7 +229,12 @@ defmodule MovingPlannerWeb.TodosLive.Index do
                 </div>
               </div>
             </div>
-            <div :if={@editing_id == todo.id} class="card-body py-3 px-4">
+            <div
+              :if={@editing_id == todo.id}
+              class="card-body py-3 px-4"
+              data-form-open="true"
+              data-cancel-event="cancel_form"
+            >
               <.form for={@form} phx-submit="save_todo" class="space-y-2">
                 <div class="flex gap-2 flex-wrap">
                   <div class="form-control flex-1 min-w-48">

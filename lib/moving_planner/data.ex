@@ -66,6 +66,7 @@ defmodule MovingPlanner.Data do
             room_id: b["room_id"],
             departed_at: parse_datetime(b["departed_at"]),
             arrived_at: parse_datetime(b["arrived_at"]),
+            code: b["code"],
             inserted_at: now,
             updated_at: now
           })
@@ -148,6 +149,7 @@ defmodule MovingPlanner.Data do
       id: b.id,
       serial: b.serial,
       room_id: b.room_id,
+      code: b.code,
       departed_at: dt_to_string(b.departed_at),
       arrived_at: dt_to_string(b.arrived_at),
       items: Enum.map(b.items, &serialize_item/1)

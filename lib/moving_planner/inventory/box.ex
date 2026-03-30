@@ -6,9 +6,10 @@ defmodule MovingPlanner.Inventory.Box do
     field :serial, :integer
     field :departed_at, :utc_datetime
     field :arrived_at, :utc_datetime
+    field :code, :string
 
     field :fragile, :boolean, virtual: true
-    field :code, :string, virtual: true
+    field :sealed, :boolean, virtual: true, default: false
 
     belongs_to :room, MovingPlanner.Rooms.Room
     has_many :items, MovingPlanner.Inventory.Item, on_delete: :delete_all
@@ -18,7 +19,7 @@ defmodule MovingPlanner.Inventory.Box do
 
   def changeset(box, attrs) do
     box
-    |> cast(attrs, [:room_id, :departed_at, :arrived_at])
+    |> cast(attrs, [:room_id, :departed_at, :arrived_at, :code])
     |> validate_arrived_requires_departed()
   end
 
@@ -43,7 +44,7 @@ defmodule MovingPlanner.Inventory.Box do
 
   @doc "Parses a box code string like 'B-LIV-001'. Returns {:ok, letter, serial} or :error."
   def parse_code(code) when is_binary(code) do
-    case Regex.run(~r/^B-([A-Z]{1,3})-(\d+)$/i, String.upcase(code)) do
+    case Regex.run(~r/^B-([A-Z0-9]{1,3})-(\d+)$/i, String.upcase(code)) do
       [_, letter, serial_str] -> {:ok, String.upcase(letter), String.to_integer(serial_str)}
       _ -> :error
     end

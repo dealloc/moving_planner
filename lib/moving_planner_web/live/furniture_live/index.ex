@@ -112,7 +112,7 @@ defmodule MovingPlannerWeb.FurnitureLive.Index do
       <div class="space-y-4">
         <div class="flex items-center justify-between">
           <h1 class="text-2xl font-bold">Furniture</h1>
-          <.link navigate={~p"/furniture/new"} class="btn btn-primary btn-sm">
+          <.link navigate={~p"/furniture/new"} class="btn btn-primary btn-sm" data-shortcut-new>
             <.icon name="hero-plus" class="size-4" /> New Furniture
           </.link>
         </div>

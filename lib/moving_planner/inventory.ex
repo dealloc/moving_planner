@@ -22,6 +22,7 @@ defmodule MovingPlanner.Inventory do
     |> Repo.all()
     |> Enum.map(&populate_virtuals/1)
     |> maybe_filter_fragile(Keyword.get(opts, :fragile))
+    |> maybe_filter_sealed(Keyword.get(opts, :sealed))
   end
 
   def get_box!(id) do
@@ -116,6 +117,14 @@ defmodule MovingPlanner.Inventory do
 
   def arrive_box(%Box{} = box) do
     update_box(box, %{arrived_at: DateTime.utc_now() |> DateTime.truncate(:second)})
+  end
+
+  def seal_box(%Box{} = box) do
+    update_box(%{box | code: nil}, %{code: Box.compute_code(box)})
+  end
+
+  def unseal_box(%Box{} = box) do
+    update_box(box, %{code: nil})
   end
 
   def delete_box(%Box{} = box), do: Repo.delete(box) |> tap_broadcast()
@@ -213,8 +222,9 @@ defmodule MovingPlanner.Inventory do
 
   defp populate_virtuals(%Box{items: items} = box) when is_list(items) do
     fragile = Enum.any?(items, & &1.fragile)
-    code = Box.compute_code(box)
-    %{box | fragile: fragile, code: code}
+    sealed = !is_nil(box.code)
+    display_code = box.code || Box.compute_code(box)
+    %{box | fragile: fragile, sealed: sealed, code: display_code}
   end
 
   defp populate_virtuals(%Box{} = box), do: box
@@ -259,6 +269,9 @@ defmodule MovingPlanner.Inventory do
   defp maybe_filter_fragile(boxes, true), do: Enum.filter(boxes, & &1.fragile)
   defp maybe_filter_fragile(boxes, _), do: boxes
 
+  defp maybe_filter_sealed(boxes, true), do: Enum.filter(boxes, & &1.sealed)
+  defp maybe_filter_sealed(boxes, _), do: boxes
+
   defp maybe_filter_box(query, nil), do: query
   defp maybe_filter_box(query, box_id), do: where(query, [i], i.box_id == ^box_id)
 
@@ -277,7 +290,16 @@ defmodule MovingPlanner.Inventory do
 
   defp maybe_search_items(query, term) do
     search = "%#{term}%"
-    where(query, [i], ilike(i.name, ^search))
+
+    tag_item_ids =
+      from(it in "item_tags",
+        join: t in "tags",
+        on: t.id == it.tag_id,
+        where: ilike(t.name, ^search),
+        select: it.item_id
+      )
+
+    where(query, [i], ilike(i.name, ^search) or i.id in subquery(tag_item_ids))
   end
 
   defp tap_broadcast({:ok, _} = result) do
