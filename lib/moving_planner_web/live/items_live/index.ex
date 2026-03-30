@@ -64,17 +64,16 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
 
         <%!-- Search and filters --%>
         <div class="flex flex-wrap gap-2 items-end">
-          <div class="form-control flex-1 min-w-48">
+          <form phx-change="search" class="form-control flex-1 min-w-48">
             <input
               type="text"
               class="input input-bordered input-sm"
               placeholder="Search items…"
               value={@search}
-              phx-change="search"
               phx-debounce="300"
               name="search"
             />
-          </div>
+          </form>
           <button
             :if={@search != "" or @selected_tag_ids != []}
             class="btn btn-ghost btn-sm"

@@ -148,7 +148,9 @@ defmodule MovingPlannerWeb.BoxesLive.Index do
   defp box_status(%{departed_at: d}) when not is_nil(d),
     do: {:in_transit, "badge-info", "In transit"}
 
-  defp box_status(_), do: {:pending, "badge-ghost", "Not departed"}
+  defp box_status(%{sealed: true}), do: {:sealed, "badge-warning", "Sealed"}
+
+  defp box_status(_), do: {:packing, "badge-ghost", "Packing"}
 
   defp format_datetime(nil), do: ""
   defp format_datetime(%DateTime{} = dt), do: DateTime.to_string(dt)

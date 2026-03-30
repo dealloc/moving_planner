@@ -192,7 +192,7 @@ defmodule MovingPlanner.Inventory do
 
   def search_tags(term) when is_binary(term) and term != "" do
     search = "%#{term}%"
-    Tag |> where([t], ilike(t.name, ^search)) |> order_by([t], t.name) |> Repo.all()
+    Tag |> where([t], like(t.name, ^search)) |> order_by([t], t.name) |> Repo.all()
   end
 
   def search_tags(_), do: []
@@ -295,11 +295,11 @@ defmodule MovingPlanner.Inventory do
       from(it in "item_tags",
         join: t in "tags",
         on: t.id == it.tag_id,
-        where: ilike(t.name, ^search),
+        where: like(t.name, ^search),
         select: it.item_id
       )
 
-    where(query, [i], ilike(i.name, ^search) or i.id in subquery(tag_item_ids))
+    where(query, [i], like(i.name, ^search) or i.id in subquery(tag_item_ids))
   end
 
   defp tap_broadcast({:ok, _} = result) do
