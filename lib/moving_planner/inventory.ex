@@ -119,6 +119,14 @@ defmodule MovingPlanner.Inventory do
     update_box(box, %{arrived_at: DateTime.utc_now() |> DateTime.truncate(:second)})
   end
 
+  def reset_arrived(%Box{} = box) do
+    update_box(box, %{arrived_at: nil})
+  end
+
+  def reset_departed(%Box{} = box) do
+    update_box(box, %{departed_at: nil, arrived_at: nil})
+  end
+
   def seal_box(%Box{} = box) do
     update_box(%{box | code: nil}, %{code: Box.compute_code(box)})
   end

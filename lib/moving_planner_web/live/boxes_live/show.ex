@@ -106,6 +106,26 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
     end
   end
 
+  def handle_event("reset_arrived", _params, socket) do
+    case Inventory.reset_arrived(socket.assigns.box) do
+      {:ok, box} ->
+        {:noreply, socket |> assign(box: box) |> put_flash(:info, "Arrival undone.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not undo arrival.")}
+    end
+  end
+
+  def handle_event("reset_departed", _params, socket) do
+    case Inventory.reset_departed(socket.assigns.box) do
+      {:ok, box} ->
+        {:noreply, socket |> assign(box: box) |> put_flash(:info, "Departure undone.")}
+
+      {:error, _} ->
+        {:noreply, put_flash(socket, :error, "Could not undo departure.")}
+    end
+  end
+
   def handle_event("update_box", params, socket) do
     room_id = params["room_id"] || get_in(params, ["box", "room_id"])
 
@@ -213,6 +233,22 @@ defmodule MovingPlannerWeb.BoxesLive.Show do
               phx-click="arrive_box"
             >
               <.icon name="hero-check-circle" class="size-4" /> Mark Arrived
+            </button>
+            <button
+              :if={@box.arrived_at}
+              class="btn btn-ghost btn-sm text-error"
+              phx-click="reset_arrived"
+              data-confirm="Undo arrival for this box?"
+            >
+              <.icon name="hero-arrow-uturn-left" class="size-4" /> Undo Arrived
+            </button>
+            <button
+              :if={@box.departed_at && !@box.arrived_at}
+              class="btn btn-ghost btn-sm text-error"
+              phx-click="reset_departed"
+              data-confirm="Undo departure for this box?"
+            >
+              <.icon name="hero-arrow-uturn-left" class="size-4" /> Undo Departed
             </button>
           </div>
         </div>
