@@ -145,6 +145,8 @@ defmodule MovingPlanner.Inventory do
   # Item queries
   # ---------------------------------------------------------------------------
 
+  @items_limit 200
+
   def list_items(opts \\ []) do
     Item
     |> maybe_filter_box(Keyword.get(opts, :box_id))
@@ -152,6 +154,7 @@ defmodule MovingPlanner.Inventory do
     |> maybe_search_items(Keyword.get(opts, :search))
     |> preload(box: :room, tags: [])
     |> order_by([i], i.name)
+    |> limit(@items_limit)
     |> Repo.all()
   end
 

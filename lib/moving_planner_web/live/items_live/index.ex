@@ -18,15 +18,11 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
      )}
   end
 
-  def handle_info(:updated, socket) do
-    items =
-      Inventory.list_items(
-        search: socket.assigns.search,
-        tag_ids: socket.assigns.selected_tag_ids
-      )
-
-    {:noreply, assign(socket, items: items, tags: Inventory.list_tags())}
+  def handle_info(:updated, %{assigns: %{search: "", selected_tag_ids: []}} = socket) do
+    {:noreply, assign(socket, items: Inventory.list_items(), tags: Inventory.list_tags())}
   end
+
+  def handle_info(:updated, socket), do: {:noreply, socket}
 
   def handle_event("search", %{"search" => term}, socket) do
     items = Inventory.list_items(search: term, tag_ids: socket.assigns.selected_tag_ids)
@@ -70,7 +66,7 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
               class="input input-bordered input-sm"
               placeholder="Search items…"
               value={@search}
-              phx-debounce="300"
+              phx-debounce="500"
               name="search"
             />
           </form>
