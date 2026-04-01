@@ -150,6 +150,7 @@ defmodule MovingPlanner.Inventory do
   def list_items(opts \\ []) do
     Item
     |> maybe_filter_box(Keyword.get(opts, :box_id))
+    |> maybe_filter_item_room(Keyword.get(opts, :room_id))
     |> maybe_filter_tags(Keyword.get(opts, :tag_ids))
     |> maybe_search_items(Keyword.get(opts, :search))
     |> preload(box: :room, tags: [])
@@ -285,6 +286,14 @@ defmodule MovingPlanner.Inventory do
 
   defp maybe_filter_box(query, nil), do: query
   defp maybe_filter_box(query, box_id), do: where(query, [i], i.box_id == ^box_id)
+
+  defp maybe_filter_item_room(query, nil), do: query
+
+  defp maybe_filter_item_room(query, room_id) do
+    query
+    |> join(:inner, [i], b in assoc(i, :box))
+    |> where([i, b], b.room_id == ^room_id)
+  end
 
   defp maybe_filter_tags(query, nil), do: query
   defp maybe_filter_tags(query, []), do: query

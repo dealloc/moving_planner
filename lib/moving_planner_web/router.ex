@@ -26,6 +26,8 @@ defmodule MovingPlannerWeb.Router do
     post "/import", DataController, :import
   end
 
+  forward "/mcp", Anubis.Server.Transport.StreamableHTTP.Plug, server: MovingPlanner.MCP.Server
+
   scope "/", MovingPlannerWeb do
     pipe_through :browser
 

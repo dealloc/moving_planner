@@ -1,5 +1,20 @@
 This is a web application written using the Phoenix web framework.
 
+## MCP Server
+
+The app exposes a read-only MCP server at `POST /mcp` (no authentication required).
+
+- **Server definition:** `lib/moving_planner/mcp/server.ex`
+- **Tool implementations:** `lib/moving_planner/mcp/tools/`
+  - `search_items.ex` — find which box contains an item (primary use case: "where is my toothbrush?")
+  - `list_boxes.ex` — list boxes filtered by status (all/packing/sealed/in_transit/arrived)
+  - `get_box.ex` — get full contents of a box by code (e.g. "B-L-001")
+  - `list_furniture.ex` — list furniture pieces and move status
+  - `get_stats.ex` — overall move progress statistics
+- **Shared helpers:** `lib/moving_planner/mcp/helpers.ex` — `box_status/1` formatting
+
+To add a new tool: create a module in `lib/moving_planner/mcp/tools/`, implement `use Anubis.Server.Component, type: :tool`, then register it in `MovingPlanner.MCP.Server` with `component MyModule`.
+
 ## Project guidelines
 
 - Use `mix precommit` alias when you are done with all changes and fix any pending issues

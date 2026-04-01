@@ -64,6 +64,7 @@ defmodule MovingPlanner.MixProject do
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.5"},
+      {:anubis_mcp, "~> 1.0"},
       {:tidewave, "~> 0.5", only: :dev}
     ]
   end

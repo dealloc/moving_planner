@@ -16,6 +16,7 @@ defmodule MovingPlanner.Application do
       {Phoenix.PubSub, name: MovingPlanner.PubSub},
       # Start a worker by calling: MovingPlanner.Worker.start_link(arg)
       # {MovingPlanner.Worker, arg},
+      {MovingPlanner.MCP.Server, transport: :streamable_http},
       # Start to serve requests, typically the last entry
       MovingPlannerWeb.Endpoint
     ]

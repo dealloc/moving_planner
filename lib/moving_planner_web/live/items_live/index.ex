@@ -3,6 +3,7 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
 
   alias MovingPlanner.Inventory
   alias MovingPlanner.Inventory.Box
+  alias MovingPlanner.Rooms
 
   def mount(_params, _session, socket) do
     if connected?(socket), do: Inventory.subscribe()
@@ -13,20 +14,44 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
        current_page: :items,
        items: Inventory.list_items(),
        tags: Inventory.list_tags(),
+       rooms: Rooms.list_rooms(exclude_n: true),
        search: "",
-       selected_tag_ids: []
+       selected_tag_ids: [],
+       filter_room_id: nil
      )}
   end
 
-  def handle_info(:updated, %{assigns: %{search: "", selected_tag_ids: []}} = socket) do
+  def handle_info(
+        :updated,
+        %{assigns: %{search: "", selected_tag_ids: [], filter_room_id: nil}} = socket
+      ) do
     {:noreply, assign(socket, items: Inventory.list_items(), tags: Inventory.list_tags())}
   end
 
   def handle_info(:updated, socket), do: {:noreply, socket}
 
   def handle_event("search", %{"search" => term}, socket) do
-    items = Inventory.list_items(search: term, tag_ids: socket.assigns.selected_tag_ids)
+    items =
+      Inventory.list_items(
+        search: term,
+        tag_ids: socket.assigns.selected_tag_ids,
+        room_id: socket.assigns.filter_room_id
+      )
+
     {:noreply, assign(socket, items: items, search: term)}
+  end
+
+  def handle_event("filter_room", %{"room_id" => room_id}, socket) do
+    room_id = if room_id == "", do: nil, else: String.to_integer(room_id)
+
+    items =
+      Inventory.list_items(
+        search: socket.assigns.search,
+        tag_ids: socket.assigns.selected_tag_ids,
+        room_id: room_id
+      )
+
+    {:noreply, assign(socket, items: items, filter_room_id: room_id)}
   end
 
   def handle_event("toggle_tag", %{"id" => id}, socket) do
@@ -39,7 +64,13 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
         [tag_id | socket.assigns.selected_tag_ids]
       end
 
-    items = Inventory.list_items(search: socket.assigns.search, tag_ids: selected)
+    items =
+      Inventory.list_items(
+        search: socket.assigns.search,
+        tag_ids: selected,
+        room_id: socket.assigns.filter_room_id
+      )
+
     {:noreply, assign(socket, items: items, selected_tag_ids: selected)}
   end
 
@@ -48,7 +79,8 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
      assign(socket,
        items: Inventory.list_items(),
        search: "",
-       selected_tag_ids: []
+       selected_tag_ids: [],
+       filter_room_id: nil
      )}
   end
 
@@ -60,7 +92,7 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
 
         <%!-- Search and filters --%>
         <div class="flex flex-wrap gap-2 items-end">
-          <form phx-change="search" class="form-control flex-1 min-w-48">
+          <form phx-change="search" phx-submit="search" class="form-control flex-1 min-w-48">
             <input
               type="text"
               class="input input-bordered input-sm"
@@ -70,8 +102,22 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
               name="search"
             />
           </form>
+          <select
+            phx-change="filter_room"
+            name="room_id"
+            class="select select-bordered select-sm"
+          >
+            <option value="">All rooms</option>
+            <option
+              :for={room <- @rooms}
+              value={room.id}
+              selected={@filter_room_id == room.id}
+            >
+              {room.name}
+            </option>
+          </select>
           <button
-            :if={@search != "" or @selected_tag_ids != []}
+            :if={@search != "" or @selected_tag_ids != [] or @filter_room_id != nil}
             class="btn btn-ghost btn-sm"
             phx-click="clear_filters"
           >
