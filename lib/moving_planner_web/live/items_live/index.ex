@@ -17,13 +17,14 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
        rooms: Rooms.list_rooms(exclude_n: true),
        search: "",
        selected_tag_ids: [],
-       filter_room_id: nil
+       filter_room_id: nil,
+       filter_box_status: nil
      )}
   end
 
   def handle_info(
         :updated,
-        %{assigns: %{search: "", selected_tag_ids: [], filter_room_id: nil}} = socket
+        %{assigns: %{search: "", selected_tag_ids: [], filter_room_id: nil, filter_box_status: nil}} = socket
       ) do
     {:noreply, assign(socket, items: Inventory.list_items(), tags: Inventory.list_tags())}
   end
@@ -35,7 +36,8 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
       Inventory.list_items(
         search: term,
         tag_ids: socket.assigns.selected_tag_ids,
-        room_id: socket.assigns.filter_room_id
+        room_id: socket.assigns.filter_room_id,
+        box_status: socket.assigns.filter_box_status
       )
 
     {:noreply, assign(socket, items: items, search: term)}
@@ -48,10 +50,32 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
       Inventory.list_items(
         search: socket.assigns.search,
         tag_ids: socket.assigns.selected_tag_ids,
-        room_id: room_id
+        room_id: room_id,
+        box_status: socket.assigns.filter_box_status
       )
 
     {:noreply, assign(socket, items: items, filter_room_id: room_id)}
+  end
+
+  def handle_event("filter_location", %{"box_status" => status}, socket) do
+    box_status =
+      case status do
+        "" -> nil
+        "not_departed" -> :not_departed
+        "in_transit" -> :in_transit
+        "arrived" -> :arrived
+        _ -> nil
+      end
+
+    items =
+      Inventory.list_items(
+        search: socket.assigns.search,
+        tag_ids: socket.assigns.selected_tag_ids,
+        room_id: socket.assigns.filter_room_id,
+        box_status: box_status
+      )
+
+    {:noreply, assign(socket, items: items, filter_box_status: box_status)}
   end
 
   def handle_event("toggle_tag", %{"id" => id}, socket) do
@@ -68,7 +92,8 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
       Inventory.list_items(
         search: socket.assigns.search,
         tag_ids: selected,
-        room_id: socket.assigns.filter_room_id
+        room_id: socket.assigns.filter_room_id,
+        box_status: socket.assigns.filter_box_status
       )
 
     {:noreply, assign(socket, items: items, selected_tag_ids: selected)}
@@ -80,7 +105,8 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
        items: Inventory.list_items(),
        search: "",
        selected_tag_ids: [],
-       filter_room_id: nil
+       filter_room_id: nil,
+       filter_box_status: nil
      )}
   end
 
@@ -116,8 +142,18 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
               {room.name}
             </option>
           </select>
+          <select
+            phx-change="filter_location"
+            name="box_status"
+            class="select select-bordered select-sm"
+          >
+            <option value="">All locations</option>
+            <option value="not_departed" selected={@filter_box_status == :not_departed}>At origin</option>
+            <option value="in_transit" selected={@filter_box_status == :in_transit}>In transit</option>
+            <option value="arrived" selected={@filter_box_status == :arrived}>Arrived</option>
+          </select>
           <button
-            :if={@search != "" or @selected_tag_ids != [] or @filter_room_id != nil}
+            :if={@search != "" or @selected_tag_ids != [] or @filter_room_id != nil or @filter_box_status != nil}
             class="btn btn-ghost btn-sm"
             phx-click="clear_filters"
           >
@@ -152,6 +188,7 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
               <tr>
                 <th>Name</th>
                 <th>Box</th>
+                <th>Location</th>
                 <th>Room</th>
                 <th>Tags</th>
                 <th>Fragile</th>
@@ -164,6 +201,16 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
                   <.link navigate={~p"/boxes/#{item.box_id}"} class="font-mono link link-hover">
                     {Box.compute_code(item.box)}
                   </.link>
+                </td>
+                <td>
+                  <%= cond do %>
+                    <% not is_nil(item.box.arrived_at) -> %>
+                      <span class="badge badge-success badge-sm">Arrived</span>
+                    <% not is_nil(item.box.departed_at) -> %>
+                      <span class="badge badge-info badge-sm">In transit</span>
+                    <% true -> %>
+                      <span class="badge badge-ghost badge-sm">At origin</span>
+                  <% end %>
                 </td>
                 <td>
                   <span class="badge badge-outline badge-sm">{item.box.room.letter}</span>
@@ -181,7 +228,7 @@ defmodule MovingPlannerWeb.ItemsLive.Index do
                 </td>
               </tr>
               <tr :if={@items == []}>
-                <td colspan="5" class="text-center text-base-content/50 py-12">
+                <td colspan="6" class="text-center text-base-content/50 py-12">
                   No items found.
                 </td>
               </tr>

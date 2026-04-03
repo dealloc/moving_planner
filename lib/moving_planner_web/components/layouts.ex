@@ -53,7 +53,7 @@ defmodule MovingPlannerWeb.Layouts do
         </div>
 
         <%!-- Page content --%>
-        <main class="flex-1 p-4 lg:p-8">
+        <main class="flex-1 p-4 pb-16 lg:p-8">
           {render_slot(@inner_block)}
         </main>
       </div>

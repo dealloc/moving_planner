@@ -153,6 +153,7 @@ defmodule MovingPlanner.Inventory do
     |> maybe_filter_item_room(Keyword.get(opts, :room_id))
     |> maybe_filter_tags(Keyword.get(opts, :tag_ids))
     |> maybe_search_items(Keyword.get(opts, :search))
+    |> maybe_filter_box_status(Keyword.get(opts, :box_status))
     |> preload(box: :room, tags: [])
     |> order_by([i], i.name)
     |> limit(@items_limit)
@@ -291,8 +292,40 @@ defmodule MovingPlanner.Inventory do
 
   defp maybe_filter_item_room(query, room_id) do
     query
-    |> join(:inner, [i], b in assoc(i, :box))
-    |> where([i, b], b.room_id == ^room_id)
+    |> join(:inner, [i], b in assoc(i, :box), as: :box)
+    |> where([i, box: b], b.room_id == ^room_id)
+  end
+
+  defp maybe_filter_box_status(query, nil), do: query
+
+  defp maybe_filter_box_status(query, :not_departed) do
+    if has_named_binding?(query, :box) do
+      where(query, [i, box: b], is_nil(b.departed_at))
+    else
+      query
+      |> join(:inner, [i], b in assoc(i, :box), as: :box)
+      |> where([i, box: b], is_nil(b.departed_at))
+    end
+  end
+
+  defp maybe_filter_box_status(query, :in_transit) do
+    if has_named_binding?(query, :box) do
+      where(query, [i, box: b], not is_nil(b.departed_at) and is_nil(b.arrived_at))
+    else
+      query
+      |> join(:inner, [i], b in assoc(i, :box), as: :box)
+      |> where([i, box: b], not is_nil(b.departed_at) and is_nil(b.arrived_at))
+    end
+  end
+
+  defp maybe_filter_box_status(query, :arrived) do
+    if has_named_binding?(query, :box) do
+      where(query, [i, box: b], not is_nil(b.arrived_at))
+    else
+      query
+      |> join(:inner, [i], b in assoc(i, :box), as: :box)
+      |> where([i, box: b], not is_nil(b.arrived_at))
+    end
   end
 
   defp maybe_filter_tags(query, nil), do: query
